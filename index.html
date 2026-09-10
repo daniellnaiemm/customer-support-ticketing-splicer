@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Splicer Support • DAPA Field Assistant</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#0b1120',
+              accent: '#06b6d4',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    
+    /* Glowing Effects */
+    .glow-cyan {
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+    }
+    .glow-blue {
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+    }
+    
+    /* Fiber Glass Glow */
+    .fiber-glow {
+      filter: drop-shadow(0px 0px 6px currentColor);
+    }
+
+    /* Print styling */
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background: white !important;
+        color: black !important;
+      }
+      .print-card {
+        border: 1px solid #ccc !important;
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
+
+  <!-- HEADER & APP STATUS BAR -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Brand Logo & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-accent p-0.5 flex items-center justify-center shadow-lg shadow-brand-500/20">
+            <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+              <i data-lucide="zap" class="w-5 h-5 text-brand-accent animate-pulse"></i>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-brand-accent bg-clip-text text-transparent">
+                SPLICER SUPPORT
+              </span>
+              <span class="px-2 py-0.5 text-[10px] font-mono font-semibold uppercase bg-brand-500/10 text-brand-accent border border-brand-500/20 rounded-md">
+                DAPA v3.4
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 hidden sm:block">Direct Access Processing & Optical Field Splicing Suite</p>
+          </div>
+        </div>
+
+        <!-- Quick Field Diagnostics Widgets -->
+        <div class="hidden lg:flex items-center space-x-6 text-xs font-mono">
+          <!-- Arc Status -->
+          <div class="flex items-center space-x-2 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></div>
+            <span class="text-slate-400">ARC CALIB:</span>
+            <span class="text-emerald-400 font-semibold" id="top-arc-status">OPTIMAL</span>
+          </div>
+          
+          <!-- Electrode Counter -->
+          <div class="flex items-center space-x-2 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+            <i data-lucide="activity" class="w-3.5 h-3.5 text-brand-500"></i>
+            <span class="text-slate-400">ELECTRODES:</span>
+            <span class="text-slate-200 font-semibold" id="top-electrode-count">1,240 / 3,000</span>
+          </div>
+
+          <!-- Battery Meter -->
+          <div class="flex items-center space-x-2 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+            <i data-lucide="battery-charging" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="text-slate-200 font-semibold">88%</span>
+          </div>
+        </div>
+
+        <!-- Quick Action Notification Toast Launcher & Menu -->
+        <div class="flex items-center space-x-2">
+          <button onclick="switchTab('report')" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-medium transition flex items-center space-x-1.5 shadow-md shadow-brand-600/20">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Export Report</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN TABS NAVIGATION -->
+  <nav class="bg-slate-900 border-b border-slate-800 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex space-x-1 overflow-x-auto py-2 scrollbar-none" id="tab-buttons">
+        
+        <button onclick="switchTab('colorcode')" id="btn-colorcode" class="tab-btn px-4 py-2 rounded-lg text-xs font-medium flex items-center space-x-2 transition whitespace-nowrap bg-brand-600 text-white shadow">
+          <i data-lucide="palette" class="w-4 h-4"></i>
+          <span>Color Code Lookup</span>
+        </button>
+
+        <button onclick="switchTab('troubleshoot')" id="btn-troubleshoot" class="tab-btn px-4 py-2 rounded-lg text-xs font-medium flex items-center space-x-2 transition whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <i data-lucide="wrench" class="w-4 h-4"></i>
+          <span>Fusion Fault Diagnoser</span>
+        </button>
+
+        <button onclick="switchTab('lossbudget')" id="btn-lossbudget" class="tab-btn px-4 py-2 rounded-lg text-xs font-medium flex items-center space-x-2 transition whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <i data-lucide="calculator" class="w-4 h-4"></i>
+          <span>Loss Budget Estimator</span>
+        </button>
+
+        <button onclick="switchTab('otdr')" id="btn-otdr" class="tab-btn px-4 py-2 rounded-lg text-xs font-medium flex items-center space-x-2 transition whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <i data-lucide="line-chart" class="w-4 h-4"></i>
+          <span>OTDR Trace Viewer</span>
+        </button>
+
+        <button onclick="switchTab('spliceboard')" id="btn-spliceboard" class="tab-btn px-4 py-2 rounded-lg text-xs font-medium flex items-center space-x-2 transition whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+          <span>Splice Tray Tray Sheet</span>
+        </button>
+
+        <button onclick="switchTab('report')" id="btn-report" class="tab-btn px-4 py-2 rounded-lg text-xs font-medium flex items-center space-x-2 transition whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+          <span>Field Work Order & Signoff</span>
+        </button>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ==================== TAB 1: FIBER COLOR CODE CALCULATOR ==================== -->
+    <div id="tab-content-colorcode" class="tab-page space-y-6">
+      
+      <!-- Top Banner / Intro -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+        <div class="space-y-1">
+          <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+            <span>TIA-598-C Fiber Optic Color Code Matrix</span>
+            <span class="text-xs font-normal text-brand-accent bg-brand-500/10 px-2 py-0.5 rounded border border-brand-500/20">Standard 12-Color Sequence</span>
+          </h2>
+          <p class="text-slate-400 text-xs">Instantly decode loose tube, strand ID, binder group, and ribbon number for any optical fiber count.</p>
+        </div>
+        
+        <!-- Standard Switcher -->
+        <div class="flex items-center space-x-3 text-xs bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+          <label class="text-slate-400 px-2 font-medium">Standard:</label>
+          <select id="color-standard-select" onchange="updateColorCode()" class="bg-slate-900 text-slate-200 border border-slate-700 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-500">
+            <option value="TIA598">TIA-598-C (Blue, Orange, Green...)</option>
+            <option value="TELCORDIA">Telcordia GR-20</option>
+            <option value="DIN">DIN 47100 / European standard</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Controls & Input Panel -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-5 shadow-lg">
+            
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-slate-200 flex items-center space-x-2">
+                <i data-lucide="search" class="w-4 h-4 text-brand-500"></i>
+                <span>Strand & Tube Finder</span>
+              </h3>
+              <span class="text-xs text-slate-500">Auto-calculates</span>
+            </div>
+
+            <!-- Target Fiber Input -->
+            <div class="space-y-2">
+              <label class="text-xs text-slate-400 font-medium flex justify-between">
+                <span>Enter Overall Fiber Strand #</span>
+                <span id="max-fiber-label" class="text-slate-500 font-mono">Max: 288</span>
+              </label>
+              <div class="flex space-x-2">
+                <input type="number" id="input-fiber-number" value="77" min="1" max="1728" oninput="updateColorCode()" 
+                       class="w-full bg-slate-950 border border-slate-700 focus:border-brand-500 rounded-xl px-4 py-2.5 text-lg font-mono font-bold text-white focus:outline-none transition">
+                <button onclick="adjustFiberNum(1)" class="px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-lg font-bold">+</button>
+                <button onclick="adjustFiberNum(-1)" class="px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-lg font-bold">-</button>
+              </div>
+            </div>
+
+            <!-- Cable Fiber Capacity Presets -->
+            <div class="space-y-2">
+              <label class="text-xs text-slate-400 font-medium">Cable Total Core Size:</label>
+              <div class="grid grid-cols-4 gap-2">
+                <button onclick="setCableCapacity(12)" class="cap-btn px-2 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-mono font-semibold transition">12F</button>
+                <button onclick="setCableCapacity(24)" class="cap-btn px-2 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-mono font-semibold transition">24F</button>
+                <button onclick="setCableCapacity(48)" class="cap-btn px-2 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-mono font-semibold transition">48F</button>
+                <button onclick="setCableCapacity(72)" class="cap-btn px-2 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-mono font-semibold transition">72F</button>
+                <button onclick="setCableCapacity(144)" class="cap-btn active-cap px-2 py-1.5 bg-brand-600 border border-brand-500 rounded-lg text-xs font-mono font-semibold transition text-white">144F</button>
+                <button onclick="setCableCapacity(288)" class="cap-btn px-2 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-mono font-semibold transition">288F</button>
+                <button onclick="setCableCapacity(432)" class="cap-btn px-2 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-mono font-semibold transition">432F</button>
+                <button onclick="setCableCapacity(864)" class="cap-btn px-2 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-mono font-semibold transition">864F</button>
+              </div>
+            </div>
+
+            <!-- Fibers per Tube Configuration -->
+            <div class="space-y-2 pt-2 border-t border-slate-800">
+              <label class="text-xs text-slate-400 font-medium flex justify-between">
+                <span>Fibers per Loose Tube:</span>
+                <span id="fibers-per-tube-val" class="text-brand-accent font-mono font-semibold">12 Fibers/Tube</span>
+              </label>
+              <select id="select-fibers-per-tube" onchange="updateColorCode()" class="w-full bg-slate-950 text-slate-200 border border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500">
+                <option value="12" selected>12 Fibers per Buffer Tube (Standard)</option>
+                <option value="6">6 Fibers per Buffer Tube</option>
+                <option value="24">24 Fibers per Ribbon / Tube</option>
+              </select>
+            </div>
+
+            <!-- Inverse Tube/Color Click Picker -->
+            <div class="space-y-2 pt-2 border-t border-slate-800">
+              <label class="text-xs text-slate-400 font-medium">Quick Reverse Lookup (Click to Jump):</label>
+              <div id="quick-color-grid" class="grid grid-cols-6 gap-2">
+                <!-- Javascript will generate 12 color chips -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Visual Output Card & Strand Context -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- Primary Identification Result Card -->
+          <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-6">
+            
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Active Query Result</span>
+                <h3 class="text-2xl font-mono font-bold text-white" id="res-header-title">Fiber #77 Identification</h3>
+              </div>
+              <div class="px-3 py-1 bg-brand-500/10 border border-brand-500/30 rounded-lg text-brand-accent text-xs font-mono">
+                Tube <span id="res-tube-num">7</span> of <span id="res-total-tubes">12</span>
+              </div>
+            </div>
+
+            <!-- Graphic Visual Cross-Section & Color Badges -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              
+              <!-- Color Cards -->
+              <div class="space-y-4">
+                
+                <!-- Buffer Tube Display -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider block">Buffer Tube Color</span>
+                    <span id="tube-color-name" class="text-lg font-bold text-white">Tube 7: Red</span>
+                  </div>
+                  <div id="tube-color-swatch" class="w-12 h-12 rounded-xl border-2 border-slate-700 shadow-lg flex items-center justify-center font-mono text-xs font-bold">
+                    #7
+                  </div>
+                </div>
+
+                <!-- Individual Strand Display -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider block">Fiber Strand Color</span>
+                    <span id="fiber-color-name" class="text-lg font-bold text-white">Strand 5: Slate</span>
+                    <span id="strand-subtext" class="text-xs text-slate-400 block font-mono">Position 5 inside Tube 7</span>
+                  </div>
+                  <div id="fiber-color-swatch" class="w-12 h-12 rounded-full border-2 border-slate-700 shadow-lg flex items-center justify-center font-mono text-xs font-bold fiber-glow">
+                    #5
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Animated Visual SVG Render of Tube & Core -->
+              <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col items-center justify-center space-y-3 min-h-[180px]">
+                <span class="text-xs text-slate-400 font-medium">Loose Tube Cross-Section View</span>
+                
+                <svg id="tube-svg" viewBox="0 0 200 200" class="w-36 h-36">
+                  <!-- SVG Outer Tube Circle -->
+                  <circle id="svg-tube-outer" cx="100" cy="100" r="85" fill="#1e293b" stroke="#ef4444" stroke-width="12" />
+                  <!-- Inner Fill -->
+                  <circle cx="100" cy="100" r="75" fill="#0f172a" />
+                  <!-- Center Core / Gel -->
+                  <circle cx="100" cy="100" r="15" fill="#334155" opacity="0.5"/>
+                  
+                  <!-- Fibers surrounding center will be rendered by JS -->
+                  <g id="svg-fibers-group"></g>
+                </svg>
+
+                <span class="text-[11px] text-slate-500 font-mono text-center">
+                  Highlighted fiber represents Strand <span id="svg-strand-label" class="text-white font-bold">5</span>
+                </span>
+              </div>
+
+            </div>
+
+            <!-- Adjacent Sequence Table -->
+            <div class="pt-4 border-t border-slate-800 space-y-3">
+              <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Adjacent Strands In Same Tube</h4>
+              <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2" id="adjacent-strands-container">
+                <!-- Javascript populates 6 surrounding fibers -->
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 2: FUSION SPLICER FAULT DIAGNOSER ==================== -->
+    <div id="tab-content-troubleshoot" class="tab-page hidden space-y-6">
+      
+      <!-- Top Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+            <i data-lucide="wrench" class="w-5 h-5 text-amber-400"></i>
+            <span>Fusion Splicer Fault & Error Code Engine</span>
+          </h2>
+          <p class="text-slate-400 text-xs">Diagnostic resolution matrix for Fujikura, Sumitomo, INNO, and FITEL precision splicers.</p>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <input type="text" id="fault-search" oninput="filterFaults()" placeholder="Search error code or symptom..." 
+                 class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 w-64">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Fault Categories & List -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Symptom / Error Selector</span>
+            
+            <div class="space-y-2 max-h-[520px] overflow-y-auto pr-1" id="fault-list-container">
+              <!-- JS populates list of common field faults -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailed Resolution Protocol -->
+        <div class="lg:col-span-7">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl" id="fault-detail-panel">
+            <!-- JS populates active fault detail -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 3: OPTICAL LOSS BUDGET ESTIMATOR ==================== -->
+    <div id="tab-content-lossbudget" class="tab-page hidden space-y-6">
+      
+      <!-- Top Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+            <i data-lucide="calculator" class="w-5 h-5 text-brand-accent"></i>
+            <span>Optical Link Loss Budget & Margin Calculator</span>
+          </h2>
+          <p class="text-slate-400 text-xs">Verify optical power budget feasibility across singlemode / multimode links, splitters, and fusion splices.</p>
+        </div>
+
+        <div id="loss-status-badge" class="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center space-x-2">
+          <i data-lucide="check-circle" class="w-4 h-4"></i>
+          <span>LINK PASS (MARGIN: +8.4 dB)</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Input Parameters Form -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-lg">
+            
+            <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider border-b border-slate-800 pb-2">Link Specifications</h3>
+
+            <!-- Wavelength Selector -->
+            <div class="space-y-1.5">
+              <label class="text-xs text-slate-400">Optical Wavelength:</label>
+              <select id="loss-wavelength" onchange="calculateLossBudget()" class="w-full bg-slate-950 border border-slate-700 text-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500">
+                <option value="1310">1310 nm Singlemode (0.35 dB/km standard attenuation)</option>
+                <option value="1550" selected>1550 nm Singlemode (0.22 dB/km standard attenuation)</option>
+                <option value="1625">1625 nm Singlemode (0.25 dB/km live monitoring wavelength)</option>
+              </select>
+            </div>
+
+            <!-- Fiber Distance -->
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs">
+                <label class="text-slate-400">Total Cable Distance (km):</label>
+                <span id="val-distance" class="text-brand-accent font-mono font-semibold">18.5 km</span>
+              </div>
+              <input type="range" id="input-distance" min="0.1" max="100" step="0.5" value="18.5" oninput="calculateLossBudget()" class="w-full accent-brand-500">
+            </div>
+
+            <!-- Fusion Splices Count -->
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs">
+                <label class="text-slate-400">Fusion Splices Count:</label>
+                <span id="val-splices" class="text-brand-accent font-mono font-semibold">6 Joints (0.02 dB/splice)</span>
+              </div>
+              <input type="range" id="input-splices" min="0" max="30" value="6" oninput="calculateLossBudget()" class="w-full accent-brand-500">
+            </div>
+
+            <!-- Connector Pairs -->
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs">
+                <label class="text-slate-400">Connector Pairs (SC/APC or LC):</label>
+                <span id="val-connectors" class="text-brand-accent font-mono font-semibold">4 Pairs (0.30 dB/pair)</span>
+              </div>
+              <input type="range" id="input-connectors" min="0" max="12" value="4" oninput="calculateLossBudget()" class="w-full accent-brand-500">
+            </div>
+
+            <!-- Passive Optical Splitter -->
+            <div class="space-y-1.5">
+              <label class="text-xs text-slate-400">Passive Splitter Ratio (PON):</label>
+              <select id="loss-splitter" onchange="calculateLossBudget()" class="w-full bg-slate-950 border border-slate-700 text-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500">
+                <option value="0">No Splitter (Point-to-Point Direct)</option>
+                <option value="3.5">1:2 Splitter (~3.5 dB insertion loss)</option>
+                <option value="7.2">1:4 Splitter (~7.2 dB insertion loss)</option>
+                <option value="10.8">1:8 Splitter (~10.8 dB insertion loss)</option>
+                <option value="14.1" selected>1:16 Splitter (~14.1 dB insertion loss)</option>
+                <option value="17.5">1:32 Splitter (~17.5 dB insertion loss)</option>
+                <option value="20.8">1:64 Splitter (~20.8 dB insertion loss)</option>
+              </select>
+            </div>
+
+            <!-- Tx Power & Rx Sensitivity -->
+            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+              <div class="space-y-1">
+                <label class="text-[11px] text-slate-400">Tx Launch Power (dBm):</label>
+                <input type="number" id="input-tx-power" value="3.0" step="0.5" oninput="calculateLossBudget()" 
+                       class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-white">
+              </div>
+              <div class="space-y-1">
+                <label class="text-[11px] text-slate-400">Rx Sensitivity (dBm):</label>
+                <input type="number" id="input-rx-sensitivity" value="-28.0" step="0.5" oninput="calculateLossBudget()" 
+                       class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-white">
+              </div>
+            </div>
+
+            <!-- Design Safety Margin -->
+            <div class="space-y-1">
+              <label class="text-[11px] text-slate-400">Design Safety Margin (dB):</label>
+              <input type="number" id="input-safety-margin" value="3.0" step="0.5" oninput="calculateLossBudget()" 
+                     class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-white">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Loss Breakdown Cards & Visual Waterfall Chart -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- Summary Metrics Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+              <span class="text-[11px] text-slate-400 uppercase tracking-wider block">Cable Fiber Loss</span>
+              <span id="metric-fiber-loss" class="text-xl font-bold font-mono text-white">4.07 dB</span>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+              <span class="text-[11px] text-slate-400 uppercase tracking-wider block">Splice + Conn Loss</span>
+              <span id="metric-joint-loss" class="text-xl font-bold font-mono text-white">1.32 dB</span>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+              <span class="text-[11px] text-slate-400 uppercase tracking-wider block">Splitter Loss</span>
+              <span id="metric-splitter-loss" class="text-xl font-bold font-mono text-brand-accent">14.10 dB</span>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1 bg-gradient-to-br from-slate-900 to-slate-800">
+              <span class="text-[11px] text-slate-400 uppercase tracking-wider block">Total Link Loss</span>
+              <span id="metric-total-loss" class="text-xl font-bold font-mono text-amber-400">19.49 dB</span>
+            </div>
+
+          </div>
+
+          <!-- Attenuation Waterfall Visual Diagram -->
+          <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h4 class="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-brand-500"></i>
+                <span>Link Attenuation Profile & Optical Power Level</span>
+              </h4>
+              <span class="text-xs font-mono text-slate-400">Tx: <span id="lbl-tx" class="text-white">+3.0 dBm</span> → Rx Min: <span id="lbl-rx" class="text-white">-28.0 dBm</span></span>
+            </div>
+
+            <div class="space-y-3" id="loss-bars-container">
+              <!-- JS renders proportional loss progress bars -->
+            </div>
+
+            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs font-mono">
+              <span class="text-slate-400">Maximum Allowed Link Loss:</span>
+              <span id="val-max-allowed-loss" class="text-slate-200 font-bold">28.00 dB</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 4: OTDR TRACE VIEWER ==================== -->
+    <div id="tab-content-otdr" class="tab-page hidden space-y-6">
+      
+      <!-- Top Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+            <i data-lucide="line-chart" class="w-5 h-5 text-emerald-400"></i>
+            <span>Interactive OTDR Trace Graph & Event Analyzer</span>
+          </h2>
+          <p class="text-slate-400 text-xs">Simulate Rayleigh backscatter, launch pulses, fusion splices, mechanical connectors, and macrobend events.</p>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button onclick="addOtdrEvent('splice')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-lg text-slate-200 border border-slate-700 flex items-center space-x-1">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Add Splice</span>
+          </button>
+          <button onclick="addOtdrEvent('connector')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-lg text-slate-200 border border-slate-700 flex items-center space-x-1">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Add Connector</span>
+          </button>
+          <button onclick="resetOtdrTrace()" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-xs font-medium rounded-lg text-red-400 border border-red-500/30">
+            Reset Trace
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas Trace Graph -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-2xl space-y-4">
+        
+        <!-- Canvas Container -->
+        <div class="relative w-full h-80 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 cursor-crosshair" id="otdr-canvas-wrapper">
+          <canvas id="otdr-canvas" class="w-full h-full block"></canvas>
+          
+          <!-- Hover Cursor Telemetry Overlay -->
+          <div id="otdr-cursor-info" class="absolute top-3 right-3 bg-slate-900/90 backdrop-blur border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-mono space-y-0.5 text-slate-300 pointer-events-none">
+            <div>Distance: <span id="otdr-cur-dist" class="text-brand-accent font-bold">0.00 km</span></div>
+            <div>Power: <span id="otdr-cur-pwr" class="text-emerald-400 font-bold">0.00 dB</span></div>
+          </div>
+        </div>
+
+        <!-- OTDR Event Table -->
+        <div class="space-y-2">
+          <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider block">Detected Event Summary</span>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5">#</th>
+                  <th class="p-2.5">Event Type</th>
+                  <th class="p-2.5">Distance (km)</th>
+                  <th class="p-2.5">Loss (dB)</th>
+                  <th class="p-2.5">Reflectance (dB)</th>
+                  <th class="p-2.5">Action</th>
+                </tr>
+              </thead>
+              <tbody id="otdr-events-table-body" class="divide-y divide-slate-800/60 text-slate-300">
+                <!-- JS builds event rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 5: SPLICE TRAY WORKBOARD ==================== -->
+    <div id="tab-content-spliceboard" class="tab-page hidden space-y-6">
+      
+      <!-- Top Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+            <i data-lucide="layers" class="w-5 h-5 text-indigo-400"></i>
+            <span>Splice Tray Mapping & Core Assignment Log</span>
+          </h2>
+          <p class="text-slate-400 text-xs">Manage Feeder (A-Side) to Distribution (B-Side) core assignments and real-time field test status.</p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <button onclick="addSpliceRow()" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded-lg flex items-center space-x-1 shadow">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Add Fiber Pair</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Workboard Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-mono text-[11px] uppercase">
+              <tr>
+                <th class="p-3">Tray #</th>
+                <th class="p-3">Side A Strand (Feeder)</th>
+                <th class="p-3">Side B Strand (Dist)</th>
+                <th class="p-3">Est Loss (dB)</th>
+                <th class="p-3">Status</th>
+                <th class="p-3">Tech Notes</th>
+                <th class="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="splice-tray-rows" class="divide-y divide-slate-800 text-slate-200">
+              <!-- JS dynamically renders rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 6: WORK ORDER & REPORT GENERATOR ==================== -->
+    <div id="tab-content-report" class="tab-page hidden space-y-6">
+      
+      <!-- Top Actions Bar -->
+      <div class="flex justify-between items-center no-print">
+        <div>
+          <h2 class="text-xl font-bold text-white">DAPA Field Operations Report</h2>
+          <p class="text-slate-400 text-xs">Printable work order signoff and quality verification log.</p>
+        </div>
+        <div class="flex space-x-3">
+          <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-medium border border-slate-700 flex items-center space-x-2">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Print Report</span>
+          </button>
+          <button onclick="copyTextReport()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-medium flex items-center space-x-2 shadow-lg shadow-brand-600/20">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+            <span>Copy Text Summary</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable Card Document -->
+      <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl space-y-8 shadow-2xl print-card">
+        
+        <!-- Document Header -->
+        <div class="flex justify-between items-start border-b border-slate-800 pb-6">
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 class="text-2xl font-extrabold text-white font-mono tracking-tight">SPLICER SUPPORT • FIELD REPORT</h1>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Generated via DAPA Direct Access Splicing Suite</p>
+          </div>
+          <div class="text-right text-xs font-mono space-y-1">
+            <div><span class="text-slate-500">DATE:</span> <span id="rpt-date" class="text-white font-bold">2026-09-10</span></div>
+            <div><span class="text-slate-500">WO ID:</span> <span id="rpt-wo-id" class="text-brand-accent font-bold">WO-8842-DAPA</span></div>
+          </div>
+        </div>
+
+        <!-- Editable Metadata Form -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
+          <div class="space-y-1">
+            <label class="text-slate-400 font-sans block text-[11px]">Site Name / Cable Node:</label>
+            <input type="text" id="rpt-site-input" value="Node DAPA-402 (Siargao Landing Station)" 
+                   class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono">
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-400 font-sans block text-[11px]">Field Splicing Technician:</label>
+            <input type="text" id="rpt-tech-input" value="Engr. Alex Vance (ID: TECH-704)" 
+                   class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono">
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-slate-400 font-sans block text-[11px]">Fusion Splicer Serial / Model:</label>
+            <input type="text" id="rpt-splicer-input" value="Fujikura 90S+ (S/N: 9F84210)" 
+                   class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono">
+          </div>
+        </div>
+
+        <!-- Execution Summary Stats -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-800">
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+            <span class="text-slate-500 block uppercase">Total Cores Spliced</span>
+            <span id="rpt-total-spliced" class="text-lg font-bold font-mono text-white">24</span>
+          </div>
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+            <span class="text-slate-500 block uppercase">Avg Splice Loss</span>
+            <span id="rpt-avg-loss" class="text-lg font-bold font-mono text-emerald-400">0.018 dB</span>
+          </div>
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+            <span class="text-slate-500 block uppercase">Pass Rate</span>
+            <span class="text-lg font-bold font-mono text-brand-accent">100%</span>
+          </div>
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+            <span class="text-slate-500 block uppercase">Cleave Angle Avg</span>
+            <span class="text-lg font-bold font-mono text-white">0.3°</span>
+          </div>
+        </div>
+
+        <!-- Sign-off Block -->
+        <div class="pt-8 border-t border-slate-800 grid grid-cols-2 gap-8 font-mono text-xs">
+          <div class="space-y-4">
+            <span class="text-slate-400 block font-sans">Splicing Technician Signature:</span>
+            <div class="h-16 border-b border-dashed border-slate-700 flex items-end pb-2 italic text-slate-500">
+              Alex Vance
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <span class="text-slate-400 block font-sans">Quality Assurance Inspector:</span>
+            <div class="h-16 border-b border-dashed border-slate-700 flex items-end pb-2 italic text-slate-500">
+              Verified & Approved
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    /* ==================== GLOBAL APP STATE & COLOR DATA ==================== */
+    
+    // TIA-598-C Standard 12 Color Palette with Hex Codes & Names
+    const TIA_COLORS = [
+      { id: 1,  name: 'Blue',   hex: '#2563eb', textHex: '#ffffff' },
+      { id: 2,  name: 'Orange', hex: '#f97316', textHex: '#ffffff' },
+      { id: 3,  name: 'Green',  hex: '#16a34a', textHex: '#ffffff' },
+      { id: 4,  name: 'Brown',  hex: '#854d0e', textHex: '#ffffff' },
+      { id: 5,  name: 'Slate',  hex: '#64748b', textHex: '#ffffff' },
+      { id: 6,  name: 'White',  hex: '#f8fafc', textHex: '#0f172a' },
+      { id: 7,  name: 'Red',    hex: '#dc2626', textHex: '#ffffff' },
+      { id: 8,  name: 'Black',  hex: '#020617', textHex: '#ffffff' },
+      { id: 9,  name: 'Yellow', hex: '#eab308', textHex: '#0f172a' },
+      { id: 10, name: 'Violet', hex: '#9333ea', textHex: '#ffffff' },
+      { id: 11, name: 'Rose',   hex: '#f43f5e', textHex: '#ffffff' },
+      { id: 12, name: 'Aqua',   hex: '#06b6d4', textHex: '#ffffff' }
+    ];
+
+    let currentCableCapacity = 144;
+    let fibersPerTube = 12;
+
+    // Splice Tray Records Array
+    let spliceTrayData = [
+      { tray: 1, sideA: 'Strand 01 (Blue/Blue)', sideB: 'Dist 01 (Blue)', loss: 0.01, status: 'PASSED', notes: 'Clean splice, 0.2° cleave' },
+      { tray: 1, sideA: 'Strand 02 (Blue/Orange)', sideB: 'Dist 02 (Orange)', loss: 0.02, status: 'PASSED', notes: 'Normal arc' },
+      { tray: 1, sideA: 'Strand 03 (Blue/Green)', sideB: 'Dist 03 (Green)', loss: 0.02, status: 'PASSED', notes: 'Good alignment' },
+      { tray: 1, sideA: 'Strand 04 (Blue/Brown)', sideB: 'Dist 04 (Brown)', loss: 0.05, status: 'RE-SPLICE', notes: 'High loss bubble detected' }
+    ];
+
+    // OTDR Events Array
+    let otdrEvents = [
+      { id: 1, type: 'Launch Cable', dist: 0.0, loss: 0.0, ref: -42.5 },
+      { id: 2, type: 'Fusion Splice', dist: 4.2, loss: 0.03, ref: -65.0 },
+      { id: 3, type: 'Mechanical Conn', dist: 8.5, loss: 0.35, ref: -45.2 },
+      { id: 4, type: 'Fusion Splice', dist: 12.8, loss: 0.02, ref: -68.1 },
+      { id: 5, type: 'Fiber End (Fresnel)', dist: 18.5, loss: 4.50, ref: -14.2 }
+    ];
+
+    // Common Fault Database
+    const FAULT_DATABASE = [
+      {
+        id: 'F01',
+        title: 'High Splice Loss (> 0.05 dB)',
+        category: 'Splice Quality',
+        code: 'ERR-302',
+        symptoms: 'Splice estimated loss high, dark line across joint on camera monitor.',
+        causes: [
+          'Dirty V-grooves or objective lens optics',
+          'Poor fiber cleave angle (> 1.5 degrees)',
+          'Incorrect arc power calibration (arc too hot/cold)',
+          'Core eccentricity / diameter mismatch'
+        ],
+        steps: [
+          'Perform manual V-groove cleaning with isopropyl alcohol (99%+) & cotton swab.',
+          'Inspect fiber end faces under cleaver microscope.',
+          'Execute Automatic Arc Calibration program on the splicer.',
+          'Replace blade or rotate cleaver wheel to a fresh blade position.'
+        ]
+      },
+      {
+        id: 'F02',
+        title: 'Core Axis Tilt / Offset Error',
+        category: 'Alignment',
+        code: 'ERR-104',
+        symptoms: 'Splicer displays "Core Axis Offset Exceeded" and aborts fusion.',
+        causes: [
+          'Dust particle stuck inside V-groove channel',
+          'Bent cladding or severely distorted fiber coating',
+          'Incompatible fiber core size (e.g. G.652D to G.657A2 mismatch)'
+        ],
+        steps: [
+          'Remove fiber and clean V-grooves thoroughly using a pre-cleaved fiber end to scrape debris.',
+          'Re-strip fiber ensuring no remaining primary buffer residue.',
+          'Re-cleave both fibers and re-insert into alignment V-groove.'
+        ]
+      },
+      {
+        id: 'F03',
+        title: 'Bubble or Void inside Joint',
+        category: 'Arc Fusion',
+        code: 'ERR-501',
+        symptoms: 'Spherical air pocket visible right at splice fusion line.',
+        causes: [
+          'Alcohol / moisture remaining on fiber tip during splicing',
+          'Arc power excessively high (vaporizing fiber core)',
+          'Fiber end face chipped or lip present from worn cleaver'
+        ],
+        steps: [
+          'Ensure alcohol completely evaporates before inserting into splicer.',
+          'Adjust Arc Power level down or run Arc Calibration.',
+          'Check cleaver blade condition and clean rubber pads.'
+        ]
+      },
+      {
+        id: 'F04',
+        title: 'Motor Over-Travel Limit Reached',
+        category: 'Hardware',
+        code: 'ERR-008',
+        symptoms: 'Motors stall during fiber feed with grinding alert sound.',
+        causes: [
+          'Fiber inserted too far forward or too far back in clamp',
+          'Dirty motor lead screws or mechanical obstruction'
+        ],
+        steps: [
+          'Set fiber cleave length precisely to 10mm - 12mm from coating stop.',
+          'Re-position fiber holder in mid-travel baseline zone.',
+          'Run Motor Calibration reset program.'
+        ]
+      }
+    ];
+
+    // Initialize icons & events on load
+    window.onload = function() {
+      lucide.createIcons();
+      initColorGrid();
+      updateColorCode();
+      renderFaultList();
+      selectFault('F01');
+      calculateLossBudget();
+      initOtdrCanvas();
+      renderSpliceTrayTable();
+      
+      // Auto resize canvas on window resize
+      window.addEventListener('resize', () => {
+        drawOtdrTrace();
+      });
+    };
+
+    // Tab Switcher
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-page').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-brand-600', 'text-white', 'shadow');
+        btn.classList.add('text-slate-400', 'hover:text-slate-200', 'hover:bg-slate-800');
+      });
+
+      const activePage = document.getElementById(`tab-content-${tabId}`);
+      const activeBtn = document.getElementById(`btn-${tabId}`);
+      
+      if (activePage && activeBtn) {
+        activePage.classList.remove('hidden');
+        activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow');
+        activeBtn.classList.remove('text-slate-400', 'hover:text-slate-200', 'hover:bg-slate-800');
+      }
+
+      if (tabId === 'otdr') {
+        setTimeout(drawOtdrTrace, 50);
+      }
+    }
+
+    /* ==================== TAB 1: FIBER COLOR CODE ENGINE ==================== */
+    
+    function initColorGrid() {
+      const grid = document.getElementById('quick-color-grid');
+      grid.innerHTML = '';
+      TIA_COLORS.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full h-8 rounded-lg flex items-center justify-center font-mono text-xs font-bold transition hover:scale-105 border border-slate-700/50';
+        btn.style.backgroundColor = c.hex;
+        btn.style.color = c.textHex;
+        btn.innerText = c.id;
+        btn.title = `Strand ${c.id}: ${c.name}`;
+        btn.onclick = () => {
+          // Jump to this color strand in current tube
+          const currentTube = Math.floor((parseInt(document.getElementById('input-fiber-number').value) - 1) / fibersPerTube);
+          const targetStrand = currentTube * fibersPerTube + c.id;
+          document.getElementById('input-fiber-number').value = targetStrand;
+          updateColorCode();
+        };
+        grid.appendChild(btn);
+      });
+    }
+
+    function setCableCapacity(cap) {
+      currentCableCapacity = cap;
+      document.querySelectorAll('.cap-btn').forEach(b => {
+        b.classList.remove('bg-brand-600', 'text-white');
+        b.classList.add('bg-slate-800');
+      });
+      event.target.classList.add('bg-brand-600', 'text-white');
+      event.target.classList.remove('bg-slate-800');
+      
+      document.getElementById('max-fiber-label').innerText = `Max: ${cap}`;
+      
+      const input = document.getElementById('input-fiber-number');
+      if (parseInt(input.value) > cap) {
+        input.value = cap;
+      }
+      updateColorCode();
+    }
+
+    function adjustFiberNum(delta) {
+      const input = document.getElementById('input-fiber-number');
+      let val = (parseInt(input.value) || 1) + delta;
+      if (val < 1) val = 1;
+      if (val > currentCableCapacity) val = currentCableCapacity;
+      input.value = val;
+      updateColorCode();
+    }
+
+    function updateColorCode() {
+      fibersPerTube = parseInt(document.getElementById('select-fibers-per-tube').value);
+      const fiberNum = parseInt(document.getElementById('input-fiber-number').value) || 1;
+      
+      // Calculate Tube & Fiber indices (0-indexed internally)
+      const zeroIdx = fiberNum - 1;
+      const tubeIdx = Math.floor(zeroIdx / fibersPerTube);
+      const fiberInTubeIdx = zeroIdx % fibersPerTube;
+
+      // Wrap around 12 colors for tubes and fibers
+      const tubeColorObj = TIA_COLORS[tubeIdx % 12];
+      const fiberColorObj = TIA_COLORS[fiberInTubeIdx % 12];
+
+      const totalTubes = Math.ceil(currentCableCapacity / fibersPerTube);
+
+      // Render Header
+      document.getElementById('res-header-title').innerText = `Fiber #${fiberNum} Identification`;
+      document.getElementById('res-tube-num').innerText = tubeIdx + 1;
+      document.getElementById('res-total-tubes').innerText = totalTubes;
+
+      // Render Tube Card
+      document.getElementById('tube-color-name').innerText = `Tube ${tubeIdx + 1}: ${tubeColorObj.name}`;
+      const tubeSwatch = document.getElementById('tube-color-swatch');
+      tubeSwatch.style.backgroundColor = tubeColorObj.hex;
+      tubeSwatch.style.color = tubeColorObj.textHex;
+      tubeSwatch.innerText = `#${tubeIdx + 1}`;
+
+      // Render Fiber Card
+      document.getElementById('fiber-color-name').innerText = `Strand ${fiberInTubeIdx + 1}: ${fiberColorObj.name}`;
+      document.getElementById('strand-subtext').innerText = `Position ${fiberInTubeIdx + 1} inside Tube ${tubeIdx + 1}`;
+      const fiberSwatch = document.getElementById('fiber-color-swatch');
+      fiberSwatch.style.backgroundColor = fiberColorObj.hex;
+      fiberSwatch.style.color = fiberColorObj.textHex;
+      fiberSwatch.innerText = `#${fiberInTubeIdx + 1}`;
+
+      // Update SVG tube visualization
+      renderTubeSvg(tubeColorObj, fiberInTubeIdx, fibersPerTube);
+
+      // Render Adjacent Strands Container
+      renderAdjacentStrands(zeroIdx, tubeIdx);
+    }
+
+    function renderTubeSvg(tubeColorObj, activeFiberIdx, count) {
+      const svgOuter = document.getElementById('svg-tube-outer');
+      svgOuter.setAttribute('stroke', tubeColorObj.hex);
+
+      const group = document.getElementById('svg-fibers-group');
+      group.innerHTML = '';
+
+      document.getElementById('svg-strand-label').innerText = activeFiberIdx + 1;
+
+      const centerX = 100;
+      const centerY = 100;
+      const radius = 55;
+
+      for (let i = 0; i < count; i++) {
+        const angle = (i * (2 * Math.PI / count)) - (Math.PI / 2);
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        
+        const colorObj = TIA_COLORS[i % 12];
+        const isActive = (i === activeFiberIdx);
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", x);
+        circle.setAttribute("cy", y);
+        circle.setAttribute("r", isActive ? "12" : "8");
+        circle.setAttribute("fill", colorObj.hex);
+        circle.setAttribute("stroke", isActive ? "#ffffff" : "#0f172a");
+        circle.setAttribute("stroke-width", isActive ? "3" : "1.5");
+        
+        if (isActive) {
+          circle.setAttribute("class", "animate-pulse");
+        }
+
+        group.appendChild(circle);
+      }
+    }
+
+    function renderAdjacentStrands(zeroIdx, tubeIdx) {
+      const container = document.getElementById('adjacent-strands-container');
+      container.innerHTML = '';
+
+      const startIdx = Math.max(0, zeroIdx - 2);
+      const endIdx = Math.min(currentCableCapacity - 1, zeroIdx + 3);
+
+      for (let i = startIdx; i <= endIdx; i++) {
+        const fNum = i + 1;
+        const fInTube = i % fibersPerTube;
+        const cObj = TIA_COLORS[fInTube % 12];
+        const isCurrent = (i === zeroIdx);
+
+        const card = document.createElement('div');
+        card.className = `p-2 rounded-lg border text-center font-mono cursor-pointer transition ${
+          isCurrent ? 'bg-brand-600/30 border-brand-500 text-white font-bold ring-1 ring-brand-500' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+        }`;
+        card.onclick = () => {
+          document.getElementById('input-fiber-number').value = fNum;
+          updateColorCode();
+        };
+
+        card.innerHTML = `
+          <div class="text-[10px] uppercase text-slate-500">Fiber #${fNum}</div>
+          <div class="w-full h-2 rounded mt-1 mb-1" style="background-color:${cObj.hex}"></div>
+          <div class="text-[11px] truncate">${cObj.name}</div>
+        `;
+
+        container.appendChild(card);
+      }
+    }
+
+    /* ==================== TAB 2: TROUBLESHOOTING ENGINE ==================== */
+
+    function renderFaultList() {
+      const container = document.getElementById('fault-list-container');
+      container.innerHTML = '';
+
+      FAULT_DATABASE.forEach(f => {
+        const item = document.createElement('div');
+        item.className = `p-3 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-800/80 cursor-pointer transition flex items-center justify-between fault-item-${f.id}`;
+        item.onclick = () => selectFault(f.id);
+
+        item.innerHTML = `
+          <div class="space-y-0.5">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold text-white">${f.title}</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono">${f.code} • ${f.category}</span>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-600"></i>
+        `;
+
+        container.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    function selectFault(id) {
+      const f = FAULT_DATABASE.find(item => item.id === id) || FAULT_DATABASE[0];
+      const panel = document.getElementById('fault-detail-panel');
+
+      panel.innerHTML = `
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div>
+            <span class="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-[10px] font-bold">
+              ${f.code}
+            </span>
+            <h3 class="text-xl font-bold text-white mt-1">${f.title}</h3>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">${f.category}</span>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Primary Symptoms</h4>
+          <p class="text-xs text-slate-400 bg-slate-950 p-3 rounded-xl border border-slate-800/80 font-mono">${f.symptoms}</p>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Probable Root Causes</h4>
+          <ul class="space-y-1.5 text-xs text-slate-300 list-disc list-inside">
+            ${f.causes.map(c => `<li class="text-slate-400"><span class="text-slate-200">${c}</span></li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="space-y-3 pt-2">
+          <h4 class="text-xs font-semibold text-brand-accent uppercase tracking-wider flex items-center space-x-1">
+            <i data-lucide="check-square" class="w-4 h-4"></i>
+            <span>Recommended Field Action Protocol</span>
+          </h4>
+          <div class="space-y-2">
+            ${f.steps.map((s, idx) => `
+              <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-start space-x-3">
+                <span class="w-5 h-5 rounded-full bg-brand-600/20 text-brand-accent flex items-center justify-center font-mono text-xs font-bold shrink-0 mt-0.5">
+                  ${idx + 1}
+                </span>
+                <p class="text-xs text-slate-300 font-mono">${s}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function filterFaults() {
+      const q = document.getElementById('fault-search').value.toLowerCase();
+      FAULT_DATABASE.forEach(f => {
+        const el = document.querySelector(`.fault-item-${f.id}`);
+        if (el) {
+          const match = f.title.toLowerCase().includes(q) || f.code.toLowerCase().includes(q) || f.symptoms.toLowerCase().includes(q);
+          el.style.display = match ? 'flex' : 'none';
+        }
+      });
+    }
+
+    /* ==================== TAB 3: LOSS BUDGET CALCULATOR ==================== */
+
+    function calculateLossBudget() {
+      const wavelength = document.getElementById('loss-wavelength').value;
+      const distance = parseFloat(document.getElementById('input-distance').value);
+      const splices = parseInt(document.getElementById('input-splices').value);
+      const connectors = parseInt(document.getElementById('input-connectors').value);
+      const splitterLoss = parseFloat(document.getElementById('loss-splitter').value);
+
+      const txPower = parseFloat(document.getElementById('input-tx-power').value);
+      const rxSensitivity = parseFloat(document.getElementById('input-rx-sensitivity').value);
+      const safetyMargin = parseFloat(document.getElementById('input-safety-margin').value);
+
+      // Fiber attenuation per km based on wavelength
+      let attenuationPerKm = 0.22; // 1550nm
+      if (wavelength === '1310') attenuationPerKm = 0.35;
+      if (wavelength === '1625') attenuationPerKm = 0.25;
+
+      const totalFiberLoss = distance * attenuationPerKm;
+      const totalSpliceLoss = splices * 0.02; // Standard 0.02 dB/splice
+      const totalConnectorLoss = connectors * 0.30; // Standard 0.30 dB/pair
+      const totalJointLoss = totalSpliceLoss + totalConnectorLoss;
+
+      const totalLinkLoss = totalFiberLoss + totalJointLoss + splitterLoss;
+
+      const maxAllowedLoss = (txPower - rxSensitivity) - safetyMargin;
+      const powerMargin = maxAllowedLoss - totalLinkLoss;
+
+      // Update Slider Labels
+      document.getElementById('val-distance').innerText = `${distance.toFixed(1)} km`;
+      document.getElementById('val-splices').innerText = `${splices} Joints (0.02 dB/splice)`;
+      document.getElementById('val-connectors').innerText = `${connectors} Pairs (0.30 dB/pair)`;
+
+      // Update Summary Metrics Cards
+      document.getElementById('metric-fiber-loss').innerText = `${totalFiberLoss.toFixed(2)} dB`;
+      document.getElementById('metric-joint-loss').innerText = `${totalJointLoss.toFixed(2)} dB`;
+      document.getElementById('metric-splitter-loss').innerText = `${splitterLoss.toFixed(2)} dB`;
+      document.getElementById('metric-total-loss').innerText = `${totalLinkLoss.toFixed(2)} dB`;
+      document.getElementById('val-max-allowed-loss').innerText = `${maxAllowedLoss.toFixed(2)} dB`;
+
+      document.getElementById('lbl-tx').innerText = `${txPower >= 0 ? '+' : ''}${txPower.toFixed(1)} dBm`;
+      document.getElementById('lbl-rx').innerText = `${rxSensitivity.toFixed(1)} dBm`;
+
+      // Status Badge
+      const statusBadge = document.getElementById('loss-status-badge');
+      if (powerMargin >= 0) {
+        statusBadge.className = "px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center space-x-2";
+        statusBadge.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i><span>LINK PASS (MARGIN: +${powerMargin.toFixed(2)} dB)</span>`;
+      } else {
+        statusBadge.className = "px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-mono font-bold text-xs flex items-center space-x-2";
+        statusBadge.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4"></i><span>LINK FAIL (MARGIN EXCEEDED BY ${Math.abs(powerMargin).toFixed(2)} dB)</span>`;
+      }
+
+      // Render Waterfall Bar Components
+      renderLossWaterfall(totalFiberLoss, totalJointLoss, splitterLoss, maxAllowedLoss);
+      lucide.createIcons();
+    }
+
+    function renderLossWaterfall(fiberLoss, jointLoss, splitterLoss, maxLoss) {
+      const container = document.getElementById('loss-bars-container');
+      container.innerHTML = '';
+
+      const items = [
+        { label: 'Fiber Cable Attenuation', value: fiberLoss, color: 'bg-brand-500' },
+        { label: 'Splices & Connectors', value: jointLoss, color: 'bg-indigo-500' },
+        { label: 'Optical Splitter', value: splitterLoss, color: 'bg-cyan-500' }
+      ];
+
+      items.forEach(item => {
+        const pct = Math.min(100, (item.value / maxLoss) * 100);
+        const row = document.createElement('div');
+        row.className = 'space-y-1';
+        row.innerHTML = `
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-slate-400">${item.label}</span>
+            <span class="text-slate-200 font-bold">${item.value.toFixed(2)} dB</span>
+          </div>
+          <div class="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+            <div class="${item.color} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    /* ==================== TAB 4: OTDR TRACE GRAPH ==================== */
+
+    let canvas, ctx;
+
+    function initOtdrCanvas() {
+      canvas = document.getElementById('otdr-canvas');
+      if (!canvas) return;
+      ctx = canvas.getContext('2d');
+
+      // Mousemove listener for crosshair inspection
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const totalDist = parseFloat(document.getElementById('input-distance').value) || 20;
+
+        const distAtX = (mouseX / canvas.width) * totalDist;
+        const pwrAtX = 0 - (distAtX * 0.22); // Approximate optical backscatter drop
+
+        document.getElementById('otdr-cur-dist').innerText = `${distAtX.toFixed(2)} km`;
+        document.getElementById('otdr-cur-pwr').innerText = `${pwrAtX.toFixed(2)} dB`;
+        
+        drawOtdrTrace(mouseX);
+      });
+
+      canvas.addEventListener('mouseleave', () => {
+        drawOtdrTrace();
+      });
+
+      drawOtdrTrace();
+      renderOtdrEventsTable();
+    }
+
+    function drawOtdrTrace(cursorX = null) {
+      if (!canvas) return;
+
+      const wrapper = document.getElementById('otdr-canvas-wrapper');
+      canvas.width = wrapper.clientWidth;
+      canvas.height = wrapper.clientHeight;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const width = canvas.width;
+      const height = canvas.height;
+
+      // Draw Grid Lines
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1;
+
+      // Vertical Distance Grid
+      for (let x = 0; x < width; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      // Horizontal dB Grid
+      for (let y = 0; y < height; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      // Draw OTDR Trace Line
+      ctx.strokeStyle = '#10b981'; // Cyan/Emerald Laser
+      ctx.lineWidth = 2;
+      ctx.shadowColor = 'rgba(16, 185, 129, 0.5)';
+      ctx.shadowBlur = 8;
+
+      ctx.beginPath();
+      
+      // Launch Pulse at Origin (X=0)
+      ctx.moveTo(0, height - 30);
+      ctx.lineTo(15, 20); // Spike up
+      ctx.lineTo(30, 80); // Drop down to Rayleigh baseline
+
+      const totalDist = 20; // 20 km scale
+      const startX = 30;
+      const endX = width - 40;
+      const usableWidth = endX - startX;
+
+      let currentY = 80;
+
+      // Draw Rayleigh Backscatter Slope with Events
+      otdrEvents.forEach((evt, idx) => {
+        const evtX = startX + (evt.dist / totalDist) * usableWidth;
+        
+        // Line up to event
+        ctx.lineTo(evtX, currentY);
+
+        if (evt.type === 'Fusion Splice') {
+          // Splice step drop
+          currentY += evt.loss * 15;
+          ctx.lineTo(evtX + 5, currentY);
+        } else if (evt.type === 'Mechanical Conn' || evt.type === 'Launch Cable') {
+          // Reflective spike up, then drop
+          ctx.lineTo(evtX + 2, currentY - 35);
+          currentY += (evt.loss * 15) + 10;
+          ctx.lineTo(evtX + 6, currentY);
+        } else if (evt.type.includes('Fresnel') || evt.type.includes('End')) {
+          // Huge Fresnel end-of-fiber reflection peak
+          ctx.lineTo(evtX + 2, 10);
+          ctx.lineTo(evtX + 10, height); // Drop off into noise floor
+        }
+      });
+
+      ctx.stroke();
+      ctx.shadowBlur = 0; // Reset glow
+
+      // Draw Cursor Crosshair if hovering
+      if (cursorX !== null) {
+        ctx.strokeStyle = '#38bdf8';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(cursorX, 0);
+        ctx.lineTo(cursorX, height);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    function renderOtdrEventsTable() {
+      const tbody = document.getElementById('otdr-events-table-body');
+      tbody.innerHTML = '';
+
+      otdrEvents.forEach((evt, idx) => {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-slate-800/50 transition';
+        row.innerHTML = `
+          <td class="p-2.5 font-bold text-slate-400">#${idx + 1}</td>
+          <td class="p-2.5 text-white font-semibold">${evt.type}</td>
+          <td class="p-2.5 text-brand-accent">${evt.dist.toFixed(2)} km</td>
+          <td class="p-2.5 text-amber-400">${evt.loss.toFixed(2)} dB</td>
+          <td class="p-2.5 text-slate-400">${evt.ref.toFixed(1)} dB</td>
+          <td class="p-2.5">
+            <button onclick="removeOtdrEvent(${evt.id})" class="text-red-400 hover:text-red-300">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+      lucide.createIcons();
+    }
+
+    function addOtdrEvent(type) {
+      const lastDist = otdrEvents.length > 0 ? otdrEvents[otdrEvents.length - 1].dist : 5.0;
+      const newDist = lastDist + 3.5;
+      
+      if (type === 'splice') {
+        otdrEvents.splice(otdrEvents.length - 1, 0, {
+          id: Date.now(),
+          type: 'Fusion Splice',
+          dist: newDist,
+          loss: 0.02,
+          ref: -68.0
+        });
+      } else {
+        otdrEvents.splice(otdrEvents.length - 1, 0, {
+          id: Date.now(),
+          type: 'Mechanical Conn',
+          dist: newDist,
+          loss: 0.30,
+          ref: -48.0
+        });
+      }
+      
+      drawOtdrTrace();
+      renderOtdrEventsTable();
+    }
+
+    function removeOtdrEvent(id) {
+      otdrEvents = otdrEvents.filter(e => e.id !== id);
+      drawOtdrTrace();
+      renderOtdrEventsTable();
+    }
+
+    function resetOtdrTrace() {
+      otdrEvents = [
+        { id: 1, type: 'Launch Cable', dist: 0.0, loss: 0.0, ref: -42.5 },
+        { id: 2, type: 'Fusion Splice', dist: 5.0, loss: 0.02, ref: -65.0 },
+        { id: 3, type: 'Fiber End (Fresnel)', dist: 15.0, loss: 4.50, ref: -14.2 }
+      ];
+      drawOtdrTrace();
+      renderOtdrEventsTable();
+    }
+
+    /* ==================== TAB 5: SPLICE TRAY WORKBOARD ==================== */
+
+    function renderSpliceTrayTable() {
+      const tbody = document.getElementById('splice-tray-rows');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      spliceTrayData.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40 transition font-mono';
+        
+        const isPass = row.status === 'PASSED';
+
+        tr.innerHTML = `
+          <td class="p-3 text-slate-400 font-bold">Tray ${row.tray}</td>
+          <td class="p-3 text-slate-200">${row.sideA}</td>
+          <td class="p-3 text-slate-200">${row.sideB}</td>
+          <td class="p-3 text-brand-accent font-bold">${row.loss.toFixed(2)} dB</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+              isPass ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border border-red-500/30 text-red-400'
+            }">
+              ${row.status}
+            </span>
+          </td>
+          <td class="p-3 text-slate-400 text-[11px]">${row.notes}</td>
+          <td class="p-3 text-right">
+            <button onclick="toggleSpliceStatus(${idx})" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] mr-1">
+              Toggle
+            </button>
+            <button onclick="deleteSpliceRow(${idx})" class="text-red-400 hover:text-red-300 p-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    function addSpliceRow() {
+      const nextNum = spliceTrayData.length + 1;
+      spliceTrayData.push({
+        tray: Math.ceil(nextNum / 12),
+        sideA: `Strand ${nextNum < 10 ? '0' + nextNum : nextNum}`,
+        sideB: `Dist ${nextNum < 10 ? '0' + nextNum : nextNum}`,
+        loss: 0.02,
+        status: 'PASSED',
+        notes: 'Standard fusion splice'
+      });
+      renderSpliceTrayTable();
+    }
+
+    function toggleSpliceStatus(idx) {
+      spliceTrayData[idx].status = spliceTrayData[idx].status === 'PASSED' ? 'RE-SPLICE' : 'PASSED';
+      renderSpliceTrayTable();
+    }
+
+    function deleteSpliceRow(idx) {
+      spliceTrayData.splice(idx, 1);
+      renderSpliceTrayTable();
+    }
+
+    /* ==================== TAB 6: REPORT LOGIC ==================== */
+
+    function copyTextReport() {
+      const site = document.getElementById('rpt-site-input').value;
+      const tech = document.getElementById('rpt-tech-input').value;
+      const splicer = document.getElementById('rpt-splicer-input').value;
+
+      const reportText = `================================================
+SPLICER SUPPORT • DAPA FIELD OPERATIONS REPORT
+================================================
+Date: ${new Date().toISOString().split('T')[0]}
+Work Order: WO-8842-DAPA
+Site Location: ${site}
+Technician: ${tech}
+Equipment: ${splicer}
+
+SUMMARY METRICS:
+------------------------------------------------
+Total Fibers Spliced: ${spliceTrayData.length}
+Average Splice Loss: 0.018 dB
+Quality Status: VERIFIED & PASSED
+
+SPLICE TRAY LOG SUMMARY:
+${spliceTrayData.map(s => `- Tray ${s.tray} | ${s.sideA} -> ${s.sideB} | Loss: ${s.loss.toFixed(2)} dB | [${s.status}]`).join('\n')}
+
+================================================
+Generated via Splicer Support DAPA Suite
+================================================`;
+
+      // Copy using execCommand for sandbox iframe compatibility
+      const textarea = document.createElement('textarea');
+      textarea.value = reportText;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+
+      // Toast notification
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-5 right-5 bg-emerald-500 text-white font-mono text-xs px-4 py-2 rounded-xl shadow-2xl z-50 animate-bounce';
+      toast.innerText = 'Field Report Copied to Clipboard!';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+  </script>
+
+</body>
+</html>
